@@ -23,7 +23,15 @@ document.addEventListener('DOMContentLoaded', () => {
         animation: false,
         scales: {
           x: { display: false },
-          y: { beginAtZero: true }
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: '#fff',
+              font: {
+                size: 14
+              }
+            }
+          }
         }
       }
     });
@@ -37,8 +45,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const housePoolElement = document.getElementById('housePool');
     const playerCreditsElement = document.getElementById('playerCredits');
     const betAmountInput = document.getElementById('betAmount');
+    const currentMultiplierElement = document.getElementById('currentMultiplier');
   
     // Event Listeners
+    document.getElementById('startGameButton').addEventListener('click', () => {
+      socket.emit('start_game');
+      statusElement.innerText = 'Game started!';
+      document.getElementById('startGameButton').disabled = true;
+    });
+  
     document.getElementById('giveCreditsButton').addEventListener('click', () => {
       socket.emit('give_credits');
     });
@@ -70,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
       statusElement.innerText = 'New game started!';
       prizePoolElement.innerText = data.prizePool.toFixed(2);
       housePoolElement.innerText = data.housePool.toFixed(2);
+      currentMultiplierElement.innerText = '1.00x';
     });
   
     // Handle multiplier updates
@@ -79,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
         multiplierData.labels.push('');
         multiplierData.datasets[0].data.push(multiplier);
         multiplierChart.update();
+        // Update current multiplier display
+        currentMultiplierElement.innerText = `${multiplier.toFixed(2)}x`;
       }
     });
   
@@ -86,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('game_crash', (data) => {
       gameRunning = false;
       statusElement.innerText = `Game crashed at ${data.crashPoint.toFixed(2)}x`;
+      currentMultiplierElement.innerText = `${data.crashPoint.toFixed(2)}x - Crashed`;
     });
   
     // Handle bet placed

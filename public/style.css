@@ -8,8 +8,25 @@ body {
   }
   
   #game-container {
+    position: relative;
     width: 80%;
     margin: 0 auto;
+  }
+  
+  #multiplierChart {
+    width: 100%;
+    height: auto;
+  }
+  
+  #currentMultiplier {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    font-weight: bold;
+    color: #00ff00;
+    text-shadow: 2px 2px #000;
   }
   
   #controls {

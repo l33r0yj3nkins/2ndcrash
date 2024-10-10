@@ -17,6 +17,7 @@ app.set('view engine', 'ejs');
 let currentMultiplier = 1.0;
 let crashPoint = 0;
 let gameRunning = false;
+let gameStarted = false; // Indicates if the game has been started
 let players = {}; // Stores player data
 const increment = 0.01; // Increase multiplier by 0.01 per tick
 const houseEdge = 0.05; // 5% house edge
@@ -39,6 +40,13 @@ function generateCrashPoint() {
 
 // Main game loop
 function gameLoop() {
+  if (!gameStarted) {
+    // Wait until the game is started
+    console.log('Waiting for the game to be started...');
+    setTimeout(gameLoop, 1000);
+    return;
+  }
+
   console.log('Game loop running, gameRunning:', gameRunning);
   if (!gameRunning) {
     // Start a new game
@@ -85,9 +93,6 @@ function gameLoop() {
   }
 }
 
-// Start the game loop immediately
-gameLoop();
-
 // Handle Socket.IO connections
 io.on('connection', (socket) => {
   console.log('A player connected:', socket.id);
@@ -109,6 +114,14 @@ io.on('connection', (socket) => {
     players[socket.id].credits += 100;
     socket.emit('update_credits', { credits: players[socket.id].credits });
     console.log(`Gave 100 credits to player ${socket.id}`);
+  });
+
+  socket.on('start_game', () => {
+    if (!gameStarted) {
+      gameStarted = true;
+      console.log(`Game started by player ${socket.id}`);
+      gameLoop(); // Start the game loop
+    }
   });
 
   socket.on('place_bet', (data) => {
