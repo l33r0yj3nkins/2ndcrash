@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
+  <form action="/admin/dashboard" method="POST">
+    <label for="houseEdge">House Edge (%):</label>
+    <input type="number" name="houseEdge" id="houseEdge" step="0.01" value="<%= houseEdge * 100 %>" required><br><br>
+
+    <label for="increment">Multiplier Increment:</label>
+    <input type="number" name="increment" id="increment" step="0.01" value="<%= increment %>" required><br><br>
+
+    <button type="submit">Update Settings</button>
+  </form>
+</body>
+</html>

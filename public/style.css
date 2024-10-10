@@ -1,54 +1,68 @@
-/* public/style.css */
-
 body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    background-color: #222;
-    color: #fff;
-  }
-  
-  #game-container {
-    position: relative;
-    width: 80%;
-    margin: 0 auto;
-  }
-  
-  #multiplierChart {
-    width: 100%;
-    height: auto;
-  }
-  
-  #currentMultiplier {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 48px;
-    font-weight: bold;
-    color: #00ff00;
-    text-shadow: 2px 2px #000;
-  }
-  
-  #controls {
-    margin-top: 20px;
-  }
-  
-  #controls input, #controls button {
-    padding: 10px;
-    margin: 5px;
-  }
-  
-  #pools {
-    margin-top: 20px;
-  }
-  
-  #pools p {
-    font-size: 18px;
-  }
-  
-  #status {
-    margin-top: 20px;
-    font-size: 18px;
-    color: #ffd700; /* Gold color for visibility */
-  }
-  
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #222;
+  color: #fff;
+}
+
+#game-container {
+  position: relative;
+  width: 80%;
+  margin: 0 auto;
+}
+
+#multiplierChart {
+  width: 100%;
+  height: auto;
+}
+
+#currentMultiplier {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  font-weight: bold;
+  color: #00ff00;
+  text-shadow: 2px 2px #000;
+}
+
+#controls {
+  margin-top: 20px;
+}
+
+#controls input, #controls button {
+  padding: 10px;
+  margin: 5px;
+}
+
+#status {
+  margin-top: 20px;
+  font-size: 18px;
+}
+
+#pools {
+  margin-top: 20px;
+}
+
+#leaderboardContainer, #playerListContainer, #chatContainer {
+  margin-top: 20px;
+}
+
+#chatMessages {
+  height: 200px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  overflow-y: scroll;
+  background-color: #fff;
+  color: #000;
+}
+
+#chatInput {
+  width: 70%;
+  padding: 10px;
+}
+
+#chatSendButton {
+  padding: 10px;
+}

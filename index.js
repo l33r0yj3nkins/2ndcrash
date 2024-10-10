@@ -1,195 +1,157 @@
-// index.js
-
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const bodyParser = require('body-parser');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// Serve static files from 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Variables
 let currentMultiplier = 1.0;
 let crashPoint = 0;
 let gameRunning = false;
-let gameStarted = false; // Indicates if the game has been started
-let players = {}; // Stores player data
-const increment = 0.01; // Increase multiplier by 0.01 per tick
-const houseEdge = 0.05; // 5% house edge
-
-// Initialize pools
-let prizePool = 1000; // Starting prize pool
-let housePool = 0; // House pool collects house edge
+let countdownRunning = false;
+let countdownTime = 10;
+let gameStarted = false;
+let houseEdge = 0.05;
+let increment = 0.01;
+let prizePool = 1000;
+let housePool = 0;
+let jackpotPool = 0;
+const players = {};
 
 // Routes
 app.get('/', (req, res) => {
   res.render('index');
 });
 
-// Helper function to generate random crash point
-function generateCrashPoint() {
-  const crashPoint = parseFloat((Math.random() * (10 - 1) + 1).toFixed(2)); // Between 1.00x and 10.00x
-  console.log('Generated crash point:', crashPoint);
-  return crashPoint;
-}
+app.get('/admin', (req, res) => {
+  res.render('admin_login');
+});
 
-// Main game loop
+app.post('/admin', (req, res) => {
+  if (req.body.password === 'adminpassword') {
+    res.redirect('/admin/dashboard');
+  } else {
+    res.send('Incorrect password');
+  }
+});
+
+app.get('/admin/dashboard', (req, res) => {
+  res.render('admin_dashboard', { houseEdge, increment });
+});
+
+app.post('/admin/dashboard', (req, res) => {
+  houseEdge = parseFloat(req.body.houseEdge) / 100;
+  increment = parseFloat(req.body.increment);
+  res.redirect('/admin/dashboard');
+});
+
+// Main Game Loop
 function gameLoop() {
-  if (!gameStarted) {
-    // Wait until the game is started
-    console.log('Waiting for the game to be started...');
-    setTimeout(gameLoop, 1000);
+  if (!gameStarted) return setTimeout(gameLoop, 1000);
+
+  if (!countdownRunning && !gameRunning) {
+    countdownRunning = true;
+    countdownTime = 10;
+    io.emit('countdown_start', { countdownTime });
+    countdownInterval();
     return;
   }
 
-  console.log('Game loop running, gameRunning:', gameRunning);
-  if (!gameRunning) {
-    // Start a new game
-    currentMultiplier = 1.0;
-    crashPoint = generateCrashPoint();
-    gameRunning = true;
-    // Reset players' cashedOut status
-    for (let playerId in players) {
-      players[playerId].cashedOut = false;
-      players[playerId].betAmount = 0; // Reset bet amount for new game
-    }
-    io.emit('game_start', { crashPoint, prizePool, housePool });
-    console.log(`New game started, crash point: ${crashPoint.toFixed(2)}`);
-    setTimeout(gameLoop, 100); // Start updating multiplier
-  } else {
-    // Game is running
+  if (gameRunning) {
     currentMultiplier += increment;
-    currentMultiplier = parseFloat(currentMultiplier.toFixed(2));
-
     io.emit('multiplier_update', { multiplier: currentMultiplier });
 
-    if (currentMultiplier >= crashPoint) {
-      // Game crashes
-      gameRunning = false;
-      io.emit('game_crash', { crashPoint });
-
-      // Handle bets that didn't cash out
-      for (let playerId in players) {
-        const player = players[playerId];
-        if (!player.cashedOut && player.betAmount > 0) {
-          // Player loses bet
-          console.log(`Player ${playerId} lost ${player.betAmount} credits.`);
-          player.betAmount = 0;
-        }
+    // Handle auto cash-out
+    Object.keys(players).forEach((playerId) => {
+      const player = players[playerId];
+      if (player.autoCashOut && currentMultiplier >= player.autoCashOut) {
+        handleCashOut(playerId);
       }
+    });
 
-      console.log(`Game crashed at ${crashPoint.toFixed(2)}x`);
-      setTimeout(() => {
-        gameLoop();
-      }, 5000); // Wait 5 seconds before starting next game
-    } else {
-      setTimeout(gameLoop, 100); // Continue updating multiplier every 100ms
-    }
+    if (currentMultiplier >= crashPoint) endGame();
+    else setTimeout(gameLoop, 100);
   }
 }
 
-// Handle Socket.IO connections
-io.on('connection', (socket) => {
-  console.log('A player connected:', socket.id);
-
-  // Initialize player data
-  if (!players[socket.id]) {
-    players[socket.id] = {
-      credits: 0,
-      betAmount: 0,
-      cashedOut: false,
-    };
+function countdownInterval() {
+  if (countdownTime > 0) {
+    io.emit('countdown_update', { countdownTime });
+    countdownTime--;
+    setTimeout(countdownInterval, 1000);
+  } else {
+    startGame();
   }
+}
 
-  // Send initial data to the player
-  socket.emit('update_pools', { prizePool, housePool });
-  socket.emit('update_credits', { credits: players[socket.id].credits });
+function startGame() {
+  currentMultiplier = 1.0;
+  crashPoint = parseFloat((Math.random() * (10 - 1) + 1).toFixed(2));
+  gameRunning = true;
+  io.emit('game_start', { crashPoint });
+  io.emit('disable_betting');  // Disable betting when the game starts
+  gameLoop();
+}
 
-  socket.on('give_credits', () => {
-    players[socket.id].credits += 100;
-    socket.emit('update_credits', { credits: players[socket.id].credits });
-    console.log(`Gave 100 credits to player ${socket.id}`);
-  });
+function endGame() {
+  gameRunning = false;
+  io.emit('game_crash', { crashPoint });
+  setTimeout(() => gameLoop(), 5000);
+}
 
-  socket.on('start_game', () => {
-    if (!gameStarted) {
-      gameStarted = true;
-      console.log(`Game started by player ${socket.id}`);
-      gameLoop(); // Start the game loop
-    }
+function handleCashOut(playerId) {
+  const player = players[playerId];
+  if (!player.cashedOut && player.betAmount > 0) {
+    const winnings = player.betAmount * currentMultiplier;
+    player.credits += winnings;
+    player.cashedOut = true;
+    prizePool -= winnings;
+    io.to(playerId).emit('cashed_out', { multiplier: currentMultiplier, winnings });
+    io.emit('update_pools', { prizePool, housePool, jackpotPool });
+  }
+}
+
+io.on('connection', (socket) => {
+  players[socket.id] = { nickname: '', credits: 0, betAmount: 0, cashedOut: false, autoCashOut: null };
+
+  socket.on('set_nickname', (data) => {
+    players[socket.id].nickname = data.nickname;
+    updatePlayerList();
   });
 
   socket.on('place_bet', (data) => {
+    if (!countdownRunning) {
+      socket.emit('status', { message: 'Bets can only be placed during the countdown!' });
+      return;
+    }
     const betAmount = data.betAmount;
-    const player = players[socket.id];
-
-    if (!gameRunning) {
-      socket.emit('status', { message: 'Wait for the next game to start.' });
-      return;
-    }
-
-    if (player.betAmount > 0) {
-      socket.emit('status', { message: 'You have already placed a bet.' });
-      return;
-    }
-
-    if (player.credits >= betAmount && betAmount > 0) {
-      player.betAmount = betAmount;
-      player.credits -= betAmount;
-
-      // Collect house edge
-      const houseCut = betAmount * houseEdge;
-      housePool += houseCut;
-
-      // Add to prize pool
-      const prizeContribution = betAmount - houseCut;
-      prizePool += prizeContribution;
-
-      // Notify the player
-      socket.emit('update_credits', { credits: player.credits });
-      io.emit('update_pools', { prizePool, housePool });
-      io.emit('bet_placed', { playerId: socket.id, betAmount });
-      console.log(`Player ${socket.id} placed a bet of ${betAmount} credits.`);
-    } else {
-      socket.emit('status', { message: 'Insufficient credits.' });
-    }
+    players[socket.id].betAmount = betAmount;
+    players[socket.id].credits -= betAmount;
+    players[socket.id].autoCashOut = data.autoCashOut || null; // Set auto cash-out multiplier
+    const jackpotContribution = betAmount * 0.1;
+    jackpotPool += jackpotContribution;
+    prizePool += betAmount - (betAmount * houseEdge) - jackpotContribution;
+    housePool += betAmount * houseEdge;
+    io.emit('update_pools', { prizePool, housePool, jackpotPool });
   });
 
   socket.on('cash_out', () => {
-    const player = players[socket.id];
-    if (player && !player.cashedOut && player.betAmount > 0 && gameRunning) {
-      player.cashedOut = true;
-      const winnings = parseFloat((player.betAmount * currentMultiplier).toFixed(2));
-
-      // Deduct from prize pool
-      if (prizePool >= winnings) {
-        prizePool -= winnings;
-        player.credits += winnings;
-        player.betAmount = 0;
-
-        socket.emit('update_credits', { credits: player.credits });
-        io.emit('update_pools', { prizePool, housePool });
-        io.emit('cashed_out', { playerId: socket.id, multiplier: currentMultiplier, winnings });
-        console.log(`Player ${socket.id} cashed out at ${currentMultiplier.toFixed(2)}x with winnings: ${winnings}`);
-      } else {
-        socket.emit('status', { message: 'Not enough funds in the prize pool to pay out winnings.' });
-      }
-    }
+    handleCashOut(socket.id);
   });
 
-  socket.on('disconnect', () => {
-    console.log('Player disconnected:', socket.id);
-    delete players[socket.id];
-  });
+  function updatePlayerList() {
+    const playerList = Object.values(players).map(p => p.nickname).filter(Boolean);
+    io.emit('update_player_list', { playerList });
+  }
 });
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(3000, () => {
+  console.log('Server is running on port 3000');
 });

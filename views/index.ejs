@@ -1,13 +1,10 @@
-<!-- views/index.ejs -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Crash Game</title>
-  <!-- Content Security Policy Meta Tag -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdn.socket.io; style-src 'self' 'unsafe-inline';">
   <link rel="stylesheet" href="/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
   <h1>Crash Game</h1>
@@ -18,23 +15,37 @@
   </div>
 
   <div id="controls">
-    <button id="startGameButton">Start Game</button>
-    <button id="giveCreditsButton">Give 100 Credits</button>
-    <p>Your Credits: <span id="playerCredits">0</span></p>
     <input type="number" id="betAmount" placeholder="Bet Amount">
+    <input type="number" id="autoCashOut" placeholder="Auto Cash-Out at X Multiplier"> <!-- New Auto Cash-Out Input -->
     <button id="placeBetButton">Place Bet</button>
     <button id="cashOutButton">Cash Out</button>
   </div>
 
+  <div id="status"></div>
+
   <div id="pools">
     <p>Prize Pool: <span id="prizePool">1000</span></p>
     <p>House Pool: <span id="housePool">0</span></p>
+    <p>Jackpot Pool: <span id="jackpotPool">0</span></p>
   </div>
 
-  <div id="status"></div>
+  <div id="leaderboardContainer">
+    <h2>Leaderboard</h2>
+    <ol id="leaderboard"></ol>
+  </div>
 
-  <!-- External Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+  <div id="playerListContainer">
+    <h2>Live Players</h2>
+    <ul id="playerList"></ul>
+  </div>
+
+  <div id="chatContainer">
+    <h2>Live Chat</h2>
+    <div id="chatMessages"></div>
+    <input type="text" id="chatInput" placeholder="Type a message...">
+    <button id="chatSendButton">Send</button>
+  </div>
+
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="/script.js"></script>
 </body>
