@@ -1,9 +1,12 @@
 from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
+from werkzeug.middleware.proxy_fix import ProxyFix
 import random
 import os
 
+
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 socketio = SocketIO(app, async_mode='eventlet')
 
 # Game state variables
