@@ -1,10 +1,12 @@
+import eventlet
+eventlet.monkey_patch()
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 import random
-import eventlet
+
 import os
 
-eventlet.monkey_patch()  # Patches standard library to cooperate with other greenthreads
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'  # Replace with your secret key
@@ -74,7 +76,5 @@ def on_cash_out(data):
         emit('cashed_out', {'username': username, 'multiplier': current_multiplier, 'winnings': winnings}, broadcast=True)
 
 if __name__ == '__main__':
-    # Start the game loop in the background
-    socketio.start_background_task(target=game_loop)
     port = int(os.environ.get('PORT', 5000))
     socketio.run(app, host='0.0.0.0', port=port)
