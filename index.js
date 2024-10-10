@@ -165,7 +165,7 @@ io.on('connection', (socket) => {
 });
 
 // Start the game loop after a short delay to allow players to connect
-setTimeout(gameLoop, 5000);
+setTimeout(gameLoop, 100);
 
 // Start the server
 const PORT = process.env.PORT || 3000;
