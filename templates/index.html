@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crash Game</title>
+    <style>
+        /* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #1e1e2f;
+    color: #ffffff;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Container for the Game */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #2e2e48;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Title */
+h1 {
+    font-size: 36px;
+    margin-bottom: 20px;
+    color: #ffd700;
+}
+
+/* Game Controls */
+.button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 5px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.button:hover {
+    background-color: #45a049;
+}
+
+/* Input Fields */
+input[type="number"] {
+    padding: 10px;
+    margin: 10px 0;
+    width: 150px;
+    border: 2px solid #888;
+    border-radius: 5px;
+}
+
+/* Information Display */
+.info {
+    margin: 20px 0;
+    font-size: 18px;
+}
+
+.info span {
+    font-weight: bold;
+    color: #00ff00;
+}
+
+/* Game Log */
+#game-log {
+    height: 200px;
+    overflow-y: scroll;
+    border: 1px solid #ffffff;
+    padding: 10px;
+    background-color: #444;
+    color: #ddd;
+    border-radius: 5px;
+}
+
+/* Footer */
+footer {
+    margin-top: 40px;
+    font-size: 14px;
+    color: #888;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Crash Game</h1>
+        
+        <div>
+            <button class="button" onclick="giveCredit()">Give Credit (100)</button>
+            <input type="number" id="bet" placeholder="Enter bet">
+            <input type="number" id="auto_cashout" placeholder="Auto cashout multiplier">
+            <button class="button" onclick="placeBet()">Place Bet</button>
+        </div>
+
+        <div class="info">
+            <p>Prize Pool: <span id="prize-pool">{{ prize_pool }}</span></p>
+            <p>House Pool: <span id="house-pool">{{ house_pool }}</span></p>
+        </div>
+
+        <h3>Game Log</h3>
+        <div id="game-log"></div>
+    </div>
+
+    <footer>
+        <p>Crash Game © 2024</p>
+    </footer>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('connect', function() {
+            console.log('Connected');
+        });
+
+        function giveCredit() {
+            socket.emit('give_credit', { username: 'Player1' });
+        }
+
+        function placeBet() {
+            var bet = document.getElementById('bet').value;
+            var autoCashout = document.getElementById('auto_cashout').value;
+            socket.emit('place_bet', { username: 'Player1', bet: bet, auto_cashout: autoCashout });
+        }
+
+        socket.on('bet_placed', function(data) {
+            updateLog(data.username + ' placed a bet of ' + data.bet);
+        });
+
+        socket.on('credit_given', function(data) {
+            updateLog(data.username + ' was given 100 credits');
+        });
+
+        socket.on('round_result', function(data) {
+            updateLog('Round result: Multiplier = ' + data.multiplier);
+            document.getElementById('prize-pool').textContent = data.prize_pool;
+            document.getElementById('house-pool').textContent = data.house_pool;
+        });
+
+        function updateLog(message) {
+            var log = document.getElementById('game-log');
+            log.innerHTML += '<p>' + message + '</p>';
+            log.scrollTop = log.scrollHeight;
+        }
+    </script>
+</body>
+</html>
