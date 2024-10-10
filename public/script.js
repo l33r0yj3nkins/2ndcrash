@@ -35,6 +35,8 @@ socket.on('game_start', (data) => {
   multiplierData.datasets[0].data = [];
   multiplierChart.update();
   document.getElementById('status').innerText = 'New game started!';
+  document.getElementById('prizePool').innerText = data.prizePool.toFixed(2);
+  document.getElementById('housePool').innerText = data.housePool.toFixed(2);
 });
 
 // Handle multiplier updates
@@ -55,12 +57,41 @@ socket.on('game_crash', (data) => {
 
 // Handle bet placed
 socket.on('bet_placed', (data) => {
-  document.getElementById('status').innerText = `Player placed a bet of ${data.betAmount}`;
+  if (data.playerId === socket.id) {
+    document.getElementById('status').innerText = `You placed a bet of ${data.betAmount} credits.`;
+  } else {
+    document.getElementById('status').innerText = `Another player placed a bet.`;
+  }
 });
 
 // Handle cash out
 socket.on('cashed_out', (data) => {
-  document.getElementById('status').innerText = `Player cashed out at ${data.multiplier.toFixed(2)}x with winnings: ${data.winnings}`;
+  if (data.playerId === socket.id) {
+    document.getElementById('status').innerText = `You cashed out at ${data.multiplier.toFixed(2)}x and won ${data.winnings} credits!`;
+  } else {
+    document.getElementById('status').innerText = `Another player cashed out.`;
+  }
+});
+
+// Update player credits
+socket.on('update_credits', (data) => {
+  document.getElementById('playerCredits').innerText = data.credits.toFixed(2);
+});
+
+// Update pools
+socket.on('update_pools', (data) => {
+  document.getElementById('prizePool').innerText = data.prizePool.toFixed(2);
+  document.getElementById('housePool').innerText = data.housePool.toFixed(2);
+});
+
+// Display status messages
+socket.on('status', (data) => {
+  document.getElementById('status').innerText = data.message;
+});
+
+// Give credits
+document.getElementById('giveCredits').addEventListener('click', () => {
+  socket.emit('give_credits');
 });
 
 // Place bet

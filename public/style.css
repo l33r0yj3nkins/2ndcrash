@@ -23,4 +23,28 @@ body {
     margin-top: 20px;
     font-size: 18px;
   }
+  /* Existing styles... */
+
+#controls {
+    margin-top: 20px;
+  }
+  
+  #controls input, #controls button {
+    padding: 10px;
+    margin: 5px;
+  }
+  
+  #pools {
+    margin-top: 20px;
+  }
+  
+  #pools p {
+    font-size: 18px;
+  }
+  
+  #status {
+    margin-top: 20px;
+    font-size: 18px;
+    color: #ffd700; /* Gold color for visibility */
+  }
   
