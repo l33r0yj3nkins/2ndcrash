@@ -1,3 +1,5 @@
+/* public/style.css */
+
 body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -11,21 +13,6 @@ body {
   }
   
   #controls {
-    margin-top: 20px;
-  }
-  
-  #controls input, #controls button {
-    padding: 10px;
-    margin: 5px;
-  }
-  
-  #status {
-    margin-top: 20px;
-    font-size: 18px;
-  }
-  /* Existing styles... */
-
-#controls {
     margin-top: 20px;
   }
   

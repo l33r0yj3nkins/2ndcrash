@@ -1,3 +1,5 @@
+// index.js
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -7,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// Serve static files
+// Serve static files from 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 
@@ -15,13 +17,13 @@ app.set('view engine', 'ejs');
 let currentMultiplier = 1.0;
 let crashPoint = 0;
 let gameRunning = false;
-let players = {};  // Stores player data
-const increment = 0.01;  // Increase multiplier by 0.01 per tick
-const houseEdge = 0.05;  // 5% house edge
+let players = {}; // Stores player data
+const increment = 0.01; // Increase multiplier by 0.01 per tick
+const houseEdge = 0.05; // 5% house edge
 
 // Initialize pools
-let prizePool = 1000;  // Starting prize pool
-let housePool = 0;     // House pool collects house edge
+let prizePool = 1000; // Starting prize pool
+let housePool = 0; // House pool collects house edge
 
 // Routes
 app.get('/', (req, res) => {
@@ -30,12 +32,14 @@ app.get('/', (req, res) => {
 
 // Helper function to generate random crash point
 function generateCrashPoint() {
-  return parseFloat((Math.random() * (10 - 1) + 1).toFixed(2));  // Between 1.00x and 10.00x
+  const crashPoint = parseFloat((Math.random() * (10 - 1) + 1).toFixed(2)); // Between 1.00x and 10.00x
+  console.log('Generated crash point:', crashPoint);
+  return crashPoint;
 }
 
 // Main game loop
 function gameLoop() {
-    console.log('Game loop running, gameRunning:', gameRunning);
+  console.log('Game loop running, gameRunning:', gameRunning);
   if (!gameRunning) {
     // Start a new game
     currentMultiplier = 1.0;
@@ -44,9 +48,11 @@ function gameLoop() {
     // Reset players' cashedOut status
     for (let playerId in players) {
       players[playerId].cashedOut = false;
+      players[playerId].betAmount = 0; // Reset bet amount for new game
     }
     io.emit('game_start', { crashPoint, prizePool, housePool });
     console.log(`New game started, crash point: ${crashPoint.toFixed(2)}`);
+    setTimeout(gameLoop, 100); // Start updating multiplier
   } else {
     // Game is running
     currentMultiplier += increment;
@@ -70,12 +76,17 @@ function gameLoop() {
       }
 
       console.log(`Game crashed at ${crashPoint.toFixed(2)}x`);
-      setTimeout(gameLoop, 5000);  // Wait 5 seconds before starting next game
+      setTimeout(() => {
+        gameLoop();
+      }, 5000); // Wait 5 seconds before starting next game
     } else {
-      setTimeout(gameLoop, 100);  // Continue updating multiplier every 100ms
+      setTimeout(gameLoop, 100); // Continue updating multiplier every 100ms
     }
   }
 }
+
+// Start the game loop immediately
+gameLoop();
 
 // Handle Socket.IO connections
 io.on('connection', (socket) => {
@@ -163,9 +174,6 @@ io.on('connection', (socket) => {
     delete players[socket.id];
   });
 });
-
-// Start the game loop after a short delay to allow players to connect
-setTimeout(gameLoop, 100);
 
 // Start the server
 const PORT = process.env.PORT || 3000;

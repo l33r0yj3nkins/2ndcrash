@@ -1,8 +1,10 @@
+// public/script.js
+
 const socket = io();
 
 // Chart.js Setup
 const ctx = document.getElementById('multiplierChart').getContext('2d');
-let multiplierData = {
+const multiplierData = {
   labels: [],
   datasets: [{
     label: 'Multiplier',
@@ -28,15 +30,45 @@ const multiplierChart = new Chart(ctx, {
 let gameRunning = false;
 let betAmount = 0;
 
+// DOM Elements
+const statusElement = document.getElementById('status');
+const prizePoolElement = document.getElementById('prizePool');
+const housePoolElement = document.getElementById('housePool');
+const playerCreditsElement = document.getElementById('playerCredits');
+const betAmountInput = document.getElementById('betAmount');
+
+// Event Listeners
+document.getElementById('giveCreditsButton').addEventListener('click', () => {
+  socket.emit('give_credits');
+});
+
+document.getElementById('placeBetButton').addEventListener('click', () => {
+  betAmount = parseFloat(betAmountInput.value);
+  if (betAmount > 0) {
+    socket.emit('place_bet', { betAmount });
+  } else {
+    alert('Enter a valid bet amount.');
+  }
+});
+
+document.getElementById('cashOutButton').addEventListener('click', () => {
+  if (gameRunning) {
+    socket.emit('cash_out');
+  }
+});
+
+// Socket.IO Event Handlers
+
 // Handle game start
 socket.on('game_start', (data) => {
+  console.log('Received game_start event:', data);
   gameRunning = true;
   multiplierData.labels = [];
   multiplierData.datasets[0].data = [];
   multiplierChart.update();
-  document.getElementById('status').innerText = 'New game started!';
-  document.getElementById('prizePool').innerText = data.prizePool.toFixed(2);
-  document.getElementById('housePool').innerText = data.housePool.toFixed(2);
+  statusElement.innerText = 'New game started!';
+  prizePoolElement.innerText = data.prizePool.toFixed(2);
+  housePoolElement.innerText = data.housePool.toFixed(2);
 });
 
 // Handle multiplier updates
@@ -52,61 +84,39 @@ socket.on('multiplier_update', (data) => {
 // Handle game crash
 socket.on('game_crash', (data) => {
   gameRunning = false;
-  document.getElementById('status').innerText = `Game crashed at ${data.crashPoint.toFixed(2)}x`;
+  statusElement.innerText = `Game crashed at ${data.crashPoint.toFixed(2)}x`;
 });
 
 // Handle bet placed
 socket.on('bet_placed', (data) => {
   if (data.playerId === socket.id) {
-    document.getElementById('status').innerText = `You placed a bet of ${data.betAmount} credits.`;
+    statusElement.innerText = `You placed a bet of ${data.betAmount} credits.`;
   } else {
-    document.getElementById('status').innerText = `Another player placed a bet.`;
+    statusElement.innerText = `Another player placed a bet.`;
   }
 });
 
 // Handle cash out
 socket.on('cashed_out', (data) => {
   if (data.playerId === socket.id) {
-    document.getElementById('status').innerText = `You cashed out at ${data.multiplier.toFixed(2)}x and won ${data.winnings} credits!`;
+    statusElement.innerText = `You cashed out at ${data.multiplier.toFixed(2)}x and won ${data.winnings} credits!`;
   } else {
-    document.getElementById('status').innerText = `Another player cashed out.`;
+    statusElement.innerText = `Another player cashed out.`;
   }
 });
 
 // Update player credits
 socket.on('update_credits', (data) => {
-  document.getElementById('playerCredits').innerText = data.credits.toFixed(2);
+  playerCreditsElement.innerText = data.credits.toFixed(2);
 });
 
 // Update pools
 socket.on('update_pools', (data) => {
-  document.getElementById('prizePool').innerText = data.prizePool.toFixed(2);
-  document.getElementById('housePool').innerText = data.housePool.toFixed(2);
+  prizePoolElement.innerText = data.prizePool.toFixed(2);
+  housePoolElement.innerText = data.housePool.toFixed(2);
 });
 
 // Display status messages
 socket.on('status', (data) => {
-  document.getElementById('status').innerText = data.message;
-});
-
-// Give credits
-document.getElementById('giveCredits').addEventListener('click', () => {
-  socket.emit('give_credits');
-});
-
-// Place bet
-document.getElementById('placeBet').addEventListener('click', () => {
-  betAmount = parseFloat(document.getElementById('betAmount').value);
-  if (betAmount > 0) {
-    socket.emit('place_bet', { betAmount });
-  } else {
-    alert('Enter a valid bet amount.');
-  }
-});
-
-// Cash out
-document.getElementById('cashOut').addEventListener('click', () => {
-  if (gameRunning) {
-    socket.emit('cash_out');
-  }
+  statusElement.innerText = data.message;
 });

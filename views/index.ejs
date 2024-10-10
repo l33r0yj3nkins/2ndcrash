@@ -1,0 +1,39 @@
+<!-- views/index.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Crash Game</title>
+  <!-- Content Security Policy Meta Tag -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdn.socket.io; style-src 'self' 'unsafe-inline';">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h1>Crash Game</h1>
+
+  <div id="game-container">
+    <canvas id="multiplierChart"></canvas>
+  </div>
+
+  <div id="controls">
+    <button id="giveCreditsButton">Give 100 Credits</button>
+    <p>Your Credits: <span id="playerCredits">0</span></p>
+    <input type="number" id="betAmount" placeholder="Bet Amount">
+    <button id="placeBetButton">Place Bet</button>
+    <button id="cashOutButton">Cash Out</button>
+  </div>
+
+  <div id="pools">
+    <p>Prize Pool: <span id="prizePool">1000</span></p>
+    <p>House Pool: <span id="housePool">0</span></p>
+  </div>
+
+  <div id="status"></div>
+
+  <!-- External Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="/script.js"></script>
+</body>
+</html>
