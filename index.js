@@ -35,6 +35,7 @@ function generateCrashPoint() {
 
 // Main game loop
 function gameLoop() {
+    console.log('Game loop running, gameRunning:', gameRunning);
   if (!gameRunning) {
     // Start a new game
     currentMultiplier = 1.0;
