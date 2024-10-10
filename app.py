@@ -1,8 +1,12 @@
 from flask import Flask, render_template, jsonify
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 from werkzeug.middleware.proxy_fix import ProxyFix
+import eventlet
 import random
 import os
+
+eventlet.monkey_patch()
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 
 app = Flask(__name__)
@@ -68,3 +72,4 @@ def get_crash_history():
 
 if __name__ == '__main__':
     socketio.run(app, debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
