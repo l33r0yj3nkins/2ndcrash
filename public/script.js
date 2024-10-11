@@ -1,23 +1,33 @@
 document.addEventListener('DOMContentLoaded', () => {
   const socket = io();
 
-  const betAmountInput = document.getElementById('betAmount');
-  const autoCashOutInput = document.getElementById('autoCashOut'); // Input for auto cash-out
+  let betAmountInput = document.getElementById('betAmount');
+  let autoCashOutInput = document.getElementById('autoCashOut');
   const placeBetButton = document.getElementById('placeBetButton');
   const cashOutButton = document.getElementById('cashOutButton');
+  const giveCreditButton = document.getElementById('giveCreditButton');
   const statusElement = document.getElementById('status');
+  const prizePoolElement = document.getElementById('prizePool');
+  const housePoolElement = document.getElementById('housePool');
+  const currentMultiplierElement = document.getElementById('currentMultiplier');
+  
+  let currentMultiplier = 1.0;
 
-  // Ensure elements exist
-  if (!betAmountInput || !autoCashOutInput || !placeBetButton || !cashOutButton || !statusElement) {
-    console.error('Some DOM elements are missing. Please check your HTML structure.');
-    return;
-  }
+  // Give Credit Button - Adds 100 credits
+  giveCreditButton.addEventListener('click', () => {
+    socket.emit('give_credit');
+  });
 
-  // Disable betting after countdown ends
-  socket.on('disable_betting', () => {
-    placeBetButton.disabled = true;
-    betAmountInput.disabled = true;
-    autoCashOutInput.disabled = true;
+  // Listen for real-time updates to multiplier
+  socket.on('multiplier_update', (data) => {
+    currentMultiplier = data.multiplier;
+    currentMultiplierElement.innerText = `${currentMultiplier.toFixed(2)}x`;
+  });
+
+  // Update pools when a player places a bet
+  socket.on('update_pools', (data) => {
+    prizePoolElement.innerText = data.prizePool;
+    housePoolElement.innerText = data.housePool;
   });
 
   // Countdown and game start
@@ -39,11 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isNaN(betAmount) || betAmount <= 0) {
       alert('Please enter a valid bet amount greater than 0.');
-      return;
-    }
-
-    if (!isNaN(autoCashOut) && autoCashOut < 1) {
-      alert('Auto cash-out value must be greater than 1x.');
       return;
     }
 
