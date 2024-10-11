@@ -1,11 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
   const socket = io();
 
-  let betAmountInput = document.getElementById('betAmount');
-  let autoCashOutInput = document.getElementById('autoCashOut'); // New input for auto cash-out
+  const betAmountInput = document.getElementById('betAmount');
+  const autoCashOutInput = document.getElementById('autoCashOut'); // Input for auto cash-out
   const placeBetButton = document.getElementById('placeBetButton');
   const cashOutButton = document.getElementById('cashOutButton');
-  
+  const statusElement = document.getElementById('status');
+
+  // Ensure elements exist
+  if (!betAmountInput || !autoCashOutInput || !placeBetButton || !cashOutButton || !statusElement) {
+    console.error('Some DOM elements are missing. Please check your HTML structure.');
+    return;
+  }
+
   // Disable betting after countdown ends
   socket.on('disable_betting', () => {
     placeBetButton.disabled = true;
@@ -15,11 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Countdown and game start
   socket.on('countdown_update', (data) => {
-    document.getElementById('status').innerText = `Countdown: ${data.countdownTime} seconds`;
+    statusElement.innerText = `Countdown: ${data.countdownTime} seconds`;
   });
 
   socket.on('game_start', () => {
-    document.getElementById('status').innerText = 'Game started!';
+    statusElement.innerText = 'Game started!';
     placeBetButton.disabled = true;
     betAmountInput.disabled = true;
     autoCashOutInput.disabled = true;
@@ -29,11 +36,18 @@ document.addEventListener('DOMContentLoaded', () => {
   placeBetButton.addEventListener('click', () => {
     const betAmount = parseFloat(betAmountInput.value);
     const autoCashOut = parseFloat(autoCashOutInput.value);
-    if (betAmount > 0) {
-      socket.emit('place_bet', { betAmount, autoCashOut });
-    } else {
-      alert('Please enter a valid bet amount');
+
+    if (isNaN(betAmount) || betAmount <= 0) {
+      alert('Please enter a valid bet amount greater than 0.');
+      return;
     }
+
+    if (!isNaN(autoCashOut) && autoCashOut < 1) {
+      alert('Auto cash-out value must be greater than 1x.');
+      return;
+    }
+
+    socket.emit('place_bet', { betAmount, autoCashOut });
   });
 
   // Cash out button
@@ -42,6 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   socket.on('cashed_out', (data) => {
-    document.getElementById('status').innerText = `You cashed out at ${data.multiplier}x and won ${data.winnings}!`;
+    statusElement.innerText = `You cashed out at ${data.multiplier}x and won ${data.winnings}!`;
   });
 });

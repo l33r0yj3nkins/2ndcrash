@@ -2,18 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>Admin Dashboard</h1>
-  <form action="/admin/dashboard" method="POST">
-    <label for="houseEdge">House Edge (%):</label>
-    <input type="number" name="houseEdge" id="houseEdge" step="0.01" value="<%= houseEdge * 100 %>" required><br><br>
+  <div class="admin-dashboard-container">
+    <h1>Admin Dashboard</h1>
+    <form action="/admin/dashboard" method="POST">
+      <div class="form-group">
+        <label for="houseEdge">House Edge (%):</label>
+        <input type="number" name="houseEdge" id="houseEdge" step="0.01" value="<%= houseEdge * 100 %>" aria-label="House Edge" required>
+      </div>
 
-    <label for="increment">Multiplier Increment:</label>
-    <input type="number" name="increment" id="increment" step="0.01" value="<%= increment %>" required><br><br>
+      <div class="form-group">
+        <label for="increment">Multiplier Increment:</label>
+        <input type="number" name="increment" id="increment" step="0.01" value="<%= increment %>" aria-label="Multiplier Increment" required>
+      </div>
 
-    <button type="submit">Update Settings</button>
-  </form>
+      <button type="submit" class="submit-btn" aria-label="Update Settings">Update Settings</button>
+    </form>
+  </div>
 </body>
 </html>

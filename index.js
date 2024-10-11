@@ -54,12 +54,16 @@ app.post('/admin/dashboard', (req, res) => {
 
 // Main Game Loop
 function gameLoop() {
-  if (!gameStarted) return setTimeout(gameLoop, 1000);
+  if (!gameStarted) {
+    console.log('Game has not started yet. Waiting...');
+    return setTimeout(gameLoop, 1000); // Keep checking every 1 second
+  }
 
   if (!countdownRunning && !gameRunning) {
     countdownRunning = true;
     countdownTime = 10;
     io.emit('countdown_start', { countdownTime });
+    console.log('Countdown started');
     countdownInterval();
     return;
   }
@@ -77,16 +81,18 @@ function gameLoop() {
     });
 
     if (currentMultiplier >= crashPoint) endGame();
-    else setTimeout(gameLoop, 100);
+    else setTimeout(gameLoop, 100); // Continue game loop every 100ms
   }
 }
 
 function countdownInterval() {
   if (countdownTime > 0) {
     io.emit('countdown_update', { countdownTime });
+    console.log(`Countdown: ${countdownTime}`);
     countdownTime--;
-    setTimeout(countdownInterval, 1000);
+    setTimeout(countdownInterval, 1000); // Update every second
   } else {
+    gameStarted = true; // Set the gameStarted flag to true when the countdown ends
     startGame();
   }
 }
@@ -97,13 +103,15 @@ function startGame() {
   gameRunning = true;
   io.emit('game_start', { crashPoint });
   io.emit('disable_betting');  // Disable betting when the game starts
+  console.log(`New game started with crash point at ${crashPoint}`);
   gameLoop();
 }
 
 function endGame() {
   gameRunning = false;
   io.emit('game_crash', { crashPoint });
-  setTimeout(() => gameLoop(), 5000);
+  console.log(`Game crashed at ${crashPoint}`);
+  setTimeout(() => gameLoop(), 5000); // Wait 5 seconds before restarting
 }
 
 function handleCashOut(playerId) {
@@ -115,6 +123,7 @@ function handleCashOut(playerId) {
     prizePool -= winnings;
     io.to(playerId).emit('cashed_out', { multiplier: currentMultiplier, winnings });
     io.emit('update_pools', { prizePool, housePool, jackpotPool });
+    console.log(`Player ${playerId} cashed out at ${currentMultiplier}x for ${winnings} credits.`);
   }
 }
 
@@ -134,7 +143,7 @@ io.on('connection', (socket) => {
     const betAmount = data.betAmount;
     players[socket.id].betAmount = betAmount;
     players[socket.id].credits -= betAmount;
-    players[socket.id].autoCashOut = data.autoCashOut || null; // Set auto cash-out multiplier
+    players[socket.id].autoCashOut = data.autoCashOut || Infinity; // Default auto cash-out is Infinity if not set
     const jackpotContribution = betAmount * 0.1;
     jackpotPool += jackpotContribution;
     prizePool += betAmount - (betAmount * houseEdge) - jackpotContribution;
@@ -146,12 +155,19 @@ io.on('connection', (socket) => {
     handleCashOut(socket.id);
   });
 
+  socket.on('disconnect', () => {
+    console.log(`${socket.id} disconnected`);
+    delete players[socket.id]; // Clean up player data on disconnect
+  });
+
   function updatePlayerList() {
     const playerList = Object.values(players).map(p => p.nickname).filter(Boolean);
     io.emit('update_player_list', { playerList });
   }
 });
 
+// Start the server and the game loop
 server.listen(3000, () => {
   console.log('Server is running on port 3000');
+  gameLoop(); // Kick off the game loop
 });
