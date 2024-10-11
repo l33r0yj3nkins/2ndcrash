@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   socket.on('game_start', () => {
     statusElement.innerText = 'Game started!';
-    placeBetButton.disabled = true;
+    placeBetButton.disabled = true; // Disable place bet button
     betAmountInput.disabled = true;
     autoCashOutInput.disabled = true;
   });
