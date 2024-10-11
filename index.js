@@ -166,8 +166,9 @@ io.on('connection', (socket) => {
   }
 });
 
-// Start the server and the game loop
-server.listen(3000, () => {
-  console.log('Server is running on port 3000');
+// Bind to Heroku's port or default to port 3000 for local development
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
   countdownInterval();  // Start the countdown immediately when the server starts
 });
