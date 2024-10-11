@@ -64,7 +64,7 @@ function gameLoop() {
     countdownTime = 10;
     io.emit('countdown_start', { countdownTime });
     console.log('Countdown started');
-    countdownInterval();
+    countdownInterval(); // Start the countdown
     return;
   }
 
@@ -92,7 +92,7 @@ function countdownInterval() {
     countdownTime--;
     setTimeout(countdownInterval, 1000); // Update every second
   } else {
-    gameStarted = true; // Set the gameStarted flag to true when the countdown ends
+    gameStarted = true;  // This ensures the game will start when countdown finishes
     startGame();
   }
 }
@@ -169,5 +169,5 @@ io.on('connection', (socket) => {
 // Start the server and the game loop
 server.listen(3000, () => {
   console.log('Server is running on port 3000');
-  gameLoop(); // Kick off the game loop
+  countdownInterval();  // Start the countdown immediately when the server starts
 });
