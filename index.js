@@ -17,7 +17,6 @@ let crashPoint = 0;
 let gameRunning = false;
 let countdownRunning = false;
 let countdownTime = 10;
-let gameStarted = false;
 let houseEdge = 0.05;
 let increment = 0.01;
 let prizePool = 1000;
@@ -54,11 +53,6 @@ app.post('/admin/dashboard', (req, res) => {
 
 // Main Game Loop
 function gameLoop() {
-  if (!gameStarted) {
-    console.log('Game has not started yet. Waiting...');
-    return setTimeout(gameLoop, 1000); // Keep checking every 1 second
-  }
-
   if (!countdownRunning && !gameRunning) {
     countdownRunning = true;
     countdownTime = 10;
@@ -75,7 +69,7 @@ function gameLoop() {
     // Handle auto cash-out
     Object.keys(players).forEach((playerId) => {
       const player = players[playerId];
-      if (player.autoCashOut && currentMultiplier >= player.autoCashOut) {
+      if (!player.cashedOut && player.autoCashOut && currentMultiplier >= player.autoCashOut) {
         handleCashOut(playerId);
       }
     });
@@ -92,7 +86,6 @@ function countdownInterval() {
     countdownTime--;
     setTimeout(countdownInterval, 1000); // Update every second
   } else {
-    gameStarted = true;  // This ensures the game will start when countdown finishes
     startGame();
   }
 }
@@ -101,6 +94,7 @@ function startGame() {
   currentMultiplier = 1.0;
   crashPoint = parseFloat((Math.random() * (10 - 1) + 1).toFixed(2));
   gameRunning = true;
+  countdownRunning = false;
   io.emit('game_start', { crashPoint });
   io.emit('disable_betting');  // Disable betting when the game starts
   console.log(`New game started with crash point at ${crashPoint}`);
@@ -111,7 +105,18 @@ function endGame() {
   gameRunning = false;
   io.emit('game_crash', { crashPoint });
   console.log(`Game crashed at ${crashPoint}`);
-  setTimeout(() => gameLoop(), 5000); // Wait 5 seconds before restarting
+
+  // Reset players' betAmount and cashedOut status
+  Object.values(players).forEach((player) => {
+    player.betAmount = 0;
+    player.cashedOut = false;
+    player.autoCashOut = null;
+  });
+
+  // Re-enable betting
+  setTimeout(() => {
+    gameLoop();
+  }, 5000); // Wait 5 seconds before starting the next round
 }
 
 function handleCashOut(playerId) {
@@ -123,12 +128,15 @@ function handleCashOut(playerId) {
     prizePool -= winnings;
     io.to(playerId).emit('cashed_out', { multiplier: currentMultiplier, winnings });
     io.emit('update_pools', { prizePool, housePool, jackpotPool });
+    io.to(playerId).emit('update_credits', { credits: player.credits });
     console.log(`Player ${playerId} cashed out at ${currentMultiplier}x for ${winnings} credits.`);
   }
 }
 
 io.on('connection', (socket) => {
   players[socket.id] = { nickname: '', credits: 0, betAmount: 0, cashedOut: false, autoCashOut: null };
+
+  socket.emit('update_credits', { credits: players[socket.id].credits });
 
   socket.on('set_nickname', (data) => {
     players[socket.id].nickname = data.nickname;
@@ -141,14 +149,19 @@ io.on('connection', (socket) => {
       return;
     }
     const betAmount = data.betAmount;
+    if (players[socket.id].credits < betAmount) {
+      socket.emit('status', { message: 'Insufficient credits!' });
+      return;
+    }
     players[socket.id].betAmount = betAmount;
     players[socket.id].credits -= betAmount;
-    players[socket.id].autoCashOut = data.autoCashOut || Infinity; // Default auto cash-out is Infinity if not set
+    players[socket.id].autoCashOut = data.autoCashOut || Infinity;
     const jackpotContribution = betAmount * 0.1;
     jackpotPool += jackpotContribution;
     prizePool += betAmount - (betAmount * houseEdge) - jackpotContribution;
     housePool += betAmount * houseEdge;
     io.emit('update_pools', { prizePool, housePool, jackpotPool });
+    socket.emit('update_credits', { credits: players[socket.id].credits });
   });
 
   socket.on('cash_out', () => {
@@ -158,6 +171,7 @@ io.on('connection', (socket) => {
   socket.on('give_credit', () => {
     if (players[socket.id]) {
       players[socket.id].credits += 100; // Add 100 credits to the player's account
+      socket.emit('update_credits', { credits: players[socket.id].credits });
       socket.emit('status', { message: '100 credits added to your account!' });
     }
   });
@@ -177,5 +191,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  countdownInterval();  // Start the countdown immediately when the server starts
+  gameLoop();  // Start the game loop
 });

@@ -14,14 +14,14 @@ h1 {
 
 #game-container {
   width: 90%;
-  height: 500px; /* Increased graph height */
+  height: 500px;
   margin: 20px auto;
   position: relative;
 }
 
 #multiplierChart {
   width: 100%;
-  height: 100%; /* Full size chart */
+  height: 100%;
   background-color: #333;
 }
 
@@ -30,7 +30,7 @@ h1 {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 72px; /* Larger multiplier text */
+  font-size: 72px;
   font-weight: bold;
   color: #00ff00;
   text-shadow: 2px 2px #000;
@@ -40,13 +40,13 @@ h1 {
   display: flex;
   justify-content: space-around;
   margin: 10px auto;
-  width: 60%; /* Smaller controls */
+  width: 60%;
 }
 
 #controls input, #controls button {
   padding: 8px;
   border-radius: 5px;
-  font-size: 14px; /* Smaller font */
+  font-size: 14px;
 }
 
 #placeBetButton, #cashOutButton, #giveCreditButton {
@@ -64,11 +64,17 @@ h1 {
 #status {
   text-align: center;
   margin: 10px 0;
-  font-size: 16px; /* Smaller status text */
+  font-size: 16px;
+}
+
+#playerInfo {
+  text-align: center;
+  margin: 10px 0;
+  font-size: 18px;
 }
 
 #pools {
-  width: 60%; /* Smaller pools */
+  width: 60%;
   margin: 10px auto;
   display: flex;
   justify-content: space-between;
